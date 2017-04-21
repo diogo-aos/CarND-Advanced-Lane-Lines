@@ -1,0 +1,10 @@
+import pickle
+
+def save_calibration_params(mts, dist, fname):
+    dist_pickle = {}
+    dist_pickle["mtx"] = mtx
+    dist_pickle["dist"] = dist
+    fname = "calibration_params.p"
+    with open(fname, "wb") as f: 
+        pickle.dump(dist_pickle, f)
+

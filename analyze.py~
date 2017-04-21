@@ -1,0 +1,26 @@
+import cv2
+import numpy as np
+import pipeline
+import glob
+import sys
+
+helptxt = '''
+python analyze.py [args]
+    -i /path/1 /path/1/*.jpg
+'''
+
+if '-i' not in sys.argv:
+    print(helptxt)
+    sys.exit(0)
+
+i_idx = sys.argv.index('-i')
+arg_paths = sys.argv[i_idx + 1:]
+paths = []
+for p in arg_paths:
+    paths.extend(glob.glob(p))
+
+# load test images
+images = [cv2.imread(p) for p in paths]
+if None in images:
+    print('images not read: ', images.count(None))
+

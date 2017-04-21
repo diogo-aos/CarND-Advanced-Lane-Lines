@@ -1,0 +1,11 @@
+# just starting
+15-04-2017 14:08
+
+I've started the project by exploring some of the transformation done in class.
+Namely, I've been tring the Sobel direction, magnitude direction and saturation
+threshold. Of these, the saturation threshold is clearly better than the rest.
+In all test images, it gets the lines quite well. However, it seems to be having
+problems with shadows.
+
+I've been using some code to adjust the parameters of these transformations
+interactevely and that helped a lot.

@@ -1,0 +1,46 @@
+import cv2
+import sys
+import glob
+
+if len(sys.argv) < 2:
+    print('usage: calibrate.py [/path/to/calibrate/image.jpg]')
+    sys.exit(0)
+
+paths = glob.glob(sys.argv[-1])
+paths = [p for p in paths if '.jpg' in p or '.jpeg' in p]
+
+if len(paths) == 0:
+    print('no images detected')
+    sys.exit(0)
+
+board_shape = (9, 6)
+imgs = [cv2.imread(p) for p in paths]
+
+# create object coordinates for chessboard
+objp = np.zeros((np.prod(board_shape), 3), np.float32)
+objp[:,:2] = np.mgrid[0:board_shape[0], 0:board_shape[1]].T.reshape(-1,2)
+
+# Arrays to store object points and image points from all the images.
+objpoints = [] # 3d points in real world space
+imgpoints = [] # 2d points in image plane.
+
+# Step through the list and search for chessboard corners
+for img in imgs:
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Find the chessboard corners
+    ret, corners = cv2.findChessboardCorners(gray, board_shape, None)
+
+    # If found, add object points, image points
+    if ret == True:
+        objpoints.append(objp)
+        imgpoints.append(corners)
+
+        # Draw and display the corners
+        cv2.drawChessboardCorners(img, (8,6), corners, ret)
+        #write_name = 'corners_found'+str(idx)+'.jpg'
+        #cv2.imwrite(write_name, img)
+        cv2.imshow('img', img)
+        cv2.waitKey(500)
+
+cv2.destroyAllWindows()

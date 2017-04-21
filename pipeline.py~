@@ -1,0 +1,10 @@
+import cv2
+import numpy as np
+import utils
+
+mtx, dist = utils.load_calibration_params('calibration_params.p')
+
+def pipeline(img, kernel_size=3, thresh=(0, 255)):
+    undistorted = cv2.undistort(img, mtx, dist, None, mtx)
+
+
