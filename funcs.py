@@ -55,7 +55,7 @@ def abs_sobel_thresh(img, orient='x', thresh_min=0, thresh_max=255):
     # 5) Create a mask of 1's where the scaled gradient magnitude
             # is > thresh_min and < thresh_max
     binout = np.zeros_like(sobel)
-    binout[(sobel >= thresh_min) & (sobel <= thresh_max)] = 1
+    binout[(sobel >= thresh_min) & (sobel <= thresh_max)] = 255
     # 6) Return this mask as your binary_output image
     return binout
 
@@ -72,7 +72,7 @@ def mag_thresh(img, sobel_kernel=3, thresh=(0, 255)):
     gradmag = (gradmag/scale_factor).astype(np.uint8)
     # Create a binary image of ones where threshold is met, zeros otherwise
     binary_output = np.zeros_like(gradmag)
-    binary_output[(gradmag >= thresh[0]) & (gradmag <= thresh[1])] = 1
+    binary_output[(gradmag >= thresh[0]) & (gradmag <= thresh[1])] = 255
 
     # Return the binary image
     return binary_output
@@ -85,9 +85,9 @@ def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
     # Take the absolute value of the gradient direction,
     # apply a threshold, and create a binary image result
-    absgraddir = np.arctan2(np.absolute(sobely), np.absolute(sobelx))
-    binary_output =  np.zeros_like(absgraddir)
-    binary_output[(absgraddir >= thresh[0]) & (absgraddir <= thresh[1])] = 1
+    absgraddir = np.arctan2(sobely, sobelx)
+    binary_output = np.zeros_like(absgraddir)
+    binary_output[(absgraddir >= thresh[0]) & (absgraddir <= thresh[1])] = 255
 
     # Return the binary image
     return binary_output
@@ -97,9 +97,10 @@ def hls_select(img, thresh=(0, 255)):
     ihls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     # 2) Apply a threshold to the S channel
     bin_output = np.zeros(img.shape[:-1], dtype=np.uint8)
-    bin_output[(ihls[...,2] > thresh[0]) & (ihls[...,2] <= thresh[-1])] = 1
+    bin_output[(ihls[...,2] > thresh[0]) & (ihls[...,2] <= thresh[-1])] = 255
     # 3) Return a binary image of threshold result
     return bin_output
+
 
 def bgr_threshold(img, thresh=(0, 255), channel=2):
     'img is BGR, default channel is red'
@@ -145,7 +146,32 @@ def draw_trapezoid(img):
     cv2.circle(img, (tr, top), 5, 100, 5)
     return img
 
-def get_points_for_fit(binary_warped, nwindows=9):
+def get_points_for_fit(img, nwindows=9,
+                       left_fit=None, right_fit=None):
+    if left_fit is not None and right_fit is not None:
+        return get_points_for_fit_from_polynomials(img, left_fit, right_fit)
+    else:
+        return get_points_for_fit_sliding_window(img, nwindows=nwindows)
+
+def get_points_for_fit_from_polynomials(img, left_fit, right_fit, margin = 20):
+    nonzero = img.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+
+    left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + left_fit[2] + margin)))
+    right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + right_fit[2] + margin)))
+
+    # Again, extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds]
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+
+    return leftx, lefty, rightx, righty
+
+def get_points_for_fit_sliding_window(binary_warped, nwindows=9):
+    if len(binary_warped.shape) > 2:
+        raise TypeError('input image has more than 2 dims')
     h, w = binary_warped.shape
     histogram = np.sum(binary_warped, axis=0)
 
@@ -243,6 +269,8 @@ def get_poly_funcs(left_fit, right_fit):
     return left_fn, right_fn
 
 def draw_poly_lines(img, left_fit, right_fit, fill=True):
+    if isinstance(left_fit, np.ndarray):
+        left_fit, right_fit = get_poly_funcs(left_fit, right_fit)
     img = img.copy()
     h, w = img.shape[:2]
     ploty = np.linspace(0, h-1, h)
@@ -259,8 +287,6 @@ def draw_poly_lines(img, left_fit, right_fit, fill=True):
         cv2.polylines(img,  np.int32([pts]), True, (255, 0, 0), 2)
 
     return img
-
-
 
 def compute_center_offset(left_fit, right_fit, meters=False):
     canvas = np.zeros((h, w), dtype=np.uint8)

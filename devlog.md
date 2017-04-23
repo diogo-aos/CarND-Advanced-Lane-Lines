@@ -11,7 +11,7 @@ I've been using some code to adjust the parameters of these transformations
 interactevely and that helped a lot. I can focus on one image at a time and
 explore much faster the effect of increasing or decreasing each parameter.
 
-I will move on to cropping the image, since I want to focus on the region of 
+I will move on to cropping the image, since I want to focus on the region of
 interest.
 
 # problems ahead
@@ -21,7 +21,7 @@ I've implemented region of interest, warping and finding a polynomial for each
 lane (actually, this was just copy pasting code for the most part). It took some
 time to fiddle with the warping zone.
 
-The warping zone is not quite there yet. On test image 5, a straight road, the 
+The warping zone is not quite there yet. On test image 5, a straight road, the
 warped result show a biconcave shape ')(' for the lane lines. Naturally, this
 makes the interpolated polynomials have that shape as well.
 
@@ -49,3 +49,61 @@ I'm already doing an OR mask between the saturation and red thresholds, and
 this incrased the performance.
 
 Next I need to continue debugging why I don't get a polygon on some frames.
+
+
+# polynomial from prev frame
+21-04-2017 21:02
+
+Using the polynimal from the previous frame improved the performance immensely.
+Now I only have 3 spots where the polygon goes a bit offlane on one edge,
+and 1 spot (under the tree with heavy shadow) where it goes completely crazy.
+
+I'm not using any kind of smoothing over the past N polynomials. This might be
+one way to approach the problem. Looking into other thresholdings (different
+space, Sobel, other that I may find).
+
+I've also tried reducing the margin for getting points from the last polynomial.
+This helps quite a bit, but is not enough for passing the hard interval since
+it gets progressively worse. I get trash on the left top of the image and that
+slowly pulls the left polynomial to the left. This might make the recovery
+slower, but it seems to recover fine after the hard interval.
+
+I need to work on a way for the pipeline to decide when to use the points from
+the previous polynomial or the sliding windows.
+
+
+# shadow hell
+22-04-2017 21:31
+
+I've noticed that when I use sliding windows for the shadow images, the result
+is a lot worse than when I use the previous polynomials as a baseline. This is
+because the polynomials restricts the number of points used in the threshold to
+a more probable area than the sliding window.
+
+# sobel x is cool
+23-04-2017 10:00
+
+I adjusted the parameters of the Sobel thresholding in the x axis and combined
+it with the red thresholding. The result was quite good. I've noticed in some
+frames that the margin around the previous polynomial is not wide enough to get
+points that would help make a better fit.
+
+I've also noticed that the red thresholding is a big puddle on the lighter road.
+The saturation threshold seems to work better.
+
+Try:
+ - incrase margin around previous polynomial
+ - make some decision when to use sat or red thresh
+
+
+# project video done
+23-04-2017 12:58
+
+I increased the margin to 50, adjusted the parameters of the red thresh and
+the binary input is now an OR of sobel x, red and sat thresh.
+
+I noticed that sobel x can't pick up yellow when the road has a light color.
+This becomes specially bad on the challenge video. Also the saturation goes
+crazy when shadows are present.
+
+I'd like to try doing something with the white and yellow colors.
