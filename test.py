@@ -116,8 +116,12 @@ if arg == 'viz':
 
 elif arg == 'store':
     ret = {}
-    fourcc = cv2.VideoWriter_fourcc('M','P','E','G')
-    video = cv2.VideoWriter('output_video.mpeg', fourcc, 24, (w, h))
+    # fourcc = cv2.VideoWriter_fourcc('M','P','E','G')
+    # video = cv2.VideoWriter('output_video.mpeg', fourcc, 24, (w, h))
+
+    fourcc = cv2.VideoWriter_fourcc('X','2','6','4')
+    video = cv2.VideoWriter('output_video.mp4', fourcc, 24, (w, h))
+
     for idx, fn in tqdm.tqdm(numbered_vid_fn):
         img = cv2.imread(fn)
         left_fit, right_fit = ret.get('pixel space polynomials', (None, None))
